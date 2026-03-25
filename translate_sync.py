@@ -62,32 +62,39 @@ def run_translation():
     has_new = False
 
     for para in paragraphs:
-        # 清洗一下段落内部的多余换行，让它变成连续的一长条
+        # 将段落内的普通换行转为空格，保持自然段完整
         clean_para = para.replace('\n', ' ')
-        
-        # 智能切分超长段落（如果单段真的超过3000字）
         sub_sections = split_text(clean_para, MAX_CHARS)
         
         for section in sub_sections:
-            if section in processed_originals: continue
+            # 查重逻辑：如果 output.txt 里已经有这段原文了，直接跳过
+            if section in existing_output:
+                continue
             
             try:
                 print(f"正在处理自然段: {section[:30]}...")
                 result = translator.translate(section, src='en', dest='zh-cn')
                 
-                # 【修改点2】输出格式优化：一段原文 + 一段译文
+                # --- 核心修改：确保对照格式 ---
+                # 每段翻译完立即生成对照块
                 new_segment = f"原文:\n{section}\n\n译文:\n{result.text}\n\n"
-                new_segment += "-"*30 + "\n\n" # 加个分割线更美观
+                new_segment += "-"*30 + "\n\n"
                 
+                # 存入列表
                 new_translations.append(new_segment)
                 has_new = True
-                time.sleep(random.uniform(2, 20)) # 稍微增加间隔，防止被封
+                
+                # 计数与休息逻辑
+                counter += 1
+                time.sleep(random.uniform(5, 10)) # 基础休息
+                
+                if counter % 20 == 0:
+                    print(f"已处理 {counter} 段，长休息中...")
+                    time.sleep(random.randint(60, 90))
+                    
             except Exception as e:
-                print(f"报错: {e}")
-            counter += 1 
-            if counter % 20 == 0:
-                print(f"已连续处理 {counter} 段，触发大休息，防止被封...")
-                time.sleep(random.randint(90, 120)) # 休息 1.5 到 2 分钟
+                print(f"翻译出错: {e}")
+                continue
 
     if has_new:
         full_output = existing_output + "".join(new_translations)
