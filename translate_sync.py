@@ -2,6 +2,7 @@ import os
 import json
 import time
 import random
+import re
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from oauth2client.service_account import ServiceAccountCredentials
@@ -56,44 +57,47 @@ def run_translation():
     
     processed_originals = [line.replace("原文: ", "").strip() for line in existing_output.split('\n') if line.startswith("原文: ")]
 
-    paragraphs = [p.strip() for p in input_content.split('\n\n') if p.strip()]
+    paragraphs = [p.strip() for p in re.split(r'\n\s*\n', input_content) if p.strip()]
     
     new_translations = []
     has_new = False
+    counter = 0
 
     for para in paragraphs:
-        # 将段落内的普通换行转为空格，保持自然段完整
-        clean_para = para.replace('\n', ' ')
-        sub_sections = split_text(clean_para, MAX_CHARS)
+        # 1. 查重：如果这一段已经存在于输出文件中，直接跳过
+        # 这样即便任务中断重跑，也不会重复翻译
+        if para[:50] in existing_output: 
+            continue
+            
+        # 2. 清洗段落内不必要的单换行（让它变成流畅的一长条）
+        clean_section = para.replace('\n', ' ')
+        
+        # 3. 处理超长段落（保险起见）
+        sub_sections = split_text(clean_section, MAX_CHARS)
         
         for section in sub_sections:
-            # 查重逻辑：如果 output.txt 里已经有这段原文了，直接跳过
-            if section in existing_output:
-                continue
-            
             try:
-                print(f"正在处理自然段: {section[:30]}...")
+                print(f"正在翻译新段落: {section[:30]}...")
                 result = translator.translate(section, src='en', dest='zh-cn')
                 
-                # --- 核心修改：确保对照格式 ---
-                # 每段翻译完立即生成对照块
-                new_segment = f"原文:\n{section}\n\n译文:\n{result.text}\n\n"
-                new_segment += "-"*30 + "\n\n"
+                # --- 严格对照格式 ---
+                # 每翻译完一个 section，立刻打包成 原文+译文
+                formatted_block = f"原文:\n{section}\n\n译文:\n{result.text}\n\n"
+                formatted_block += "-"*30 + "\n\n"
                 
-                # 存入列表
-                new_translations.append(new_segment)
+                new_translations.append(formatted_block)
                 has_new = True
                 
-                # 计数与休息逻辑
+                # 4. 计数与休息（防封）
                 counter += 1
-                time.sleep(random.uniform(5, 10)) # 基础休息
+                time.sleep(random.uniform(3, 8))
                 
-                if counter % 20 == 0:
-                    print(f"已处理 {counter} 段，长休息中...")
+                if counter % 15 == 0:
+                    print(f"--- 已翻译 {counter} 段，保护性长休息 ---")
                     time.sleep(random.randint(60, 90))
                     
             except Exception as e:
-                print(f"翻译出错: {e}")
+                print(f"该段翻译失败: {e}")
                 continue
 
     if has_new:
