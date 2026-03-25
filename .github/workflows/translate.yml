@@ -23,5 +23,5 @@ jobs:
 
       - name: Start Translation
         env:
-          GDRIVE_JSON: ${{ secrets.GDRIVE_JSON }}
+          GDRIVE_JSON: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
         run: python translate_sync.py
