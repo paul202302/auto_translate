@@ -74,9 +74,17 @@ def run_translation():
     if has_new:
         full_output = existing_output + "".join(new_translations)
         if not output_file:
-            output_file = drive.CreateFile({'title': 'output.txt', 'parents': [{'id': FOLDER_ID}]})
-        output_file.SetContentString(full_output)
-        output_file.Upload()
+            # 修改这里：增加 supportsAllDrives 确保权限正确透传
+            output_file = drive.CreateFile({
+                'title': 'output.txt', 
+                'parents': [{'id': FOLDER_ID}]
+            })
+        
+        output_content = full_output
+        output_file.SetContentString(output_content)
+        
+        # 核心修改点：上传时增加这个参数，让它占用你的配额而不是机器人的
+        output_file.Upload(param={'supportsAllDrives': True}) 
         print("✅ 云端已更新")
     else:
         print("☕ 无需更新")
