@@ -54,20 +54,32 @@ def run_translation():
     
     processed_originals = [line.replace("原文: ", "").strip() for line in existing_output.split('\n') if line.startswith("原文: ")]
 
-    paragraphs = [p.strip() for p in input_content.split('\n') if p.strip()]
+   paragraphs = [p.strip() for p in input_content.split('\n\n') if p.strip()]
+    
     new_translations = []
     has_new = False
 
     for para in paragraphs:
-        for section in split_text(para, MAX_CHARS):
+        # 清洗一下段落内部的多余换行，让它变成连续的一长条
+        clean_para = para.replace('\n', ' ')
+        
+        # 智能切分超长段落（如果单段真的超过3000字）
+        sub_sections = split_text(clean_para, MAX_CHARS)
+        
+        for section in sub_sections:
             if section in processed_originals: continue
             
             try:
-                print(f"正在翻译: {section[:20]}...")
+                print(f"正在处理自然段: {section[:30]}...")
                 result = translator.translate(section, src='en', dest='zh-cn')
-                new_translations.append(f"原文: {section}\n译文: {result.text}\n\n")
+                
+                # 【修改点2】输出格式优化：一段原文 + 一段译文
+                new_segment = f"原文:\n{section}\n\n译文:\n{result.text}\n\n"
+                new_segment += "-"*30 + "\n\n" # 加个分割线更美观
+                
+                new_translations.append(new_segment)
                 has_new = True
-                time.sleep(1)
+                time.sleep(1.5) # 稍微增加间隔，防止被封
             except Exception as e:
                 print(f"报错: {e}")
 
