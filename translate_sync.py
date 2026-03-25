@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import random
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from oauth2client.service_account import ServiceAccountCredentials
@@ -40,6 +41,7 @@ def split_text(text, max_len):
 def run_translation():
     drive = get_drive()
     translator = Translator()
+    counter = 0  # <--- 1. 在这里初始化计数器
     
     file_list = drive.ListFile({'q': f"'{FOLDER_ID}' in parents and trashed=false"}).GetList()
     input_file = next((f for f in file_list if f['title'] == 'input.txt'), None)
@@ -79,9 +81,13 @@ def run_translation():
                 
                 new_translations.append(new_segment)
                 has_new = True
-                time.sleep(1.5) # 稍微增加间隔，防止被封
+                time.sleep(random.uniform(2, 20)) # 稍微增加间隔，防止被封
             except Exception as e:
                 print(f"报错: {e}")
+            counter += 1 
+            if counter % 20 == 0:
+                print(f"已连续处理 {counter} 段，触发大休息，防止被封...")
+                time.sleep(random.randint(90, 120)) # 休息 1.5 到 2 分钟
 
     if has_new:
         full_output = existing_output + "".join(new_translations)
