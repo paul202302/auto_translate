@@ -13,9 +13,9 @@ MAX_CHARS = 3000              # 单次翻译最大字符限制
 
 def get_drive():
     # 从 GitHub Secrets 读取环境变量
-    creds_json = os.environ.get('GDRIVE_JSON')
+    creds_json = os.environ.get('GOOGLE_DRIVE_CREDENTIALS')
     if not creds_json:
-        raise Exception("错误：未能在 GitHub Secrets 中找到 GDRIVE_JSON")
+        raise Exception("错误：未能在 GitHub Secrets 中找到 GOOGLE_DRIVE_CREDENTIALS")
     
     keyfile_dict = json.loads(creds_json)
     scope = ['https://www.googleapis.com/auth/drive']
