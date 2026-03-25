@@ -56,7 +56,7 @@ def run_translation():
     
     processed_originals = [line.replace("原文: ", "").strip() for line in existing_output.split('\n') if line.startswith("原文: ")]
 
-   paragraphs = [p.strip() for p in input_content.split('\n\n') if p.strip()]
+    paragraphs = [p.strip() for p in input_content.split('\n\n') if p.strip()]
     
     new_translations = []
     has_new = False
