@@ -1,17 +1,24 @@
-
 name: Google Drive Auto Translator
 
 on:
-  schedule:
-    #- cron: '*/30 * * * *'  # 每 30 分钟自动运行一次
-  workflow_dispatch:       # 支持手动点击按钮运行
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   translate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 获取完整历史以减少推送冲突
+
+      - name: Setup Git Identity
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -24,15 +31,5 @@ jobs:
       - name: Start Translation
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 有时需要明确传递 token
         run: python translate_sync.py
-
-      - name: Commit and Push Changes
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          # 拉取最新代码防止冲突
-          git pull origin main 
-          # 只要是新生成的 CHAPTER 文件都添加
-          git add CHAPTER_*.txt PREFACE.txt || echo "No files to add"
-          git commit -m "Add translated chapters" || echo "No changes to commit"
-          git push
