@@ -46,14 +46,40 @@ def run_translation():
     
     file_list = drive.ListFile({'q': f"'{FOLDER_ID}' in parents and trashed=false"}).GetList()
     input_file = next((f for f in file_list if f['title'] == 'input.txt'), None)
-    output_file = next((f for f in file_list if f['title'] == 'output.txt'), None)
-
+   
     if not input_file:
         print("未发现 input.txt")
         return
 
     input_content = input_file.GetContentString(encoding='utf-8')
-    existing_output = output_file.GetContentString(encoding='utf-8') if output_file else ""
+    
+    chapters = re.split(r'(CHAPTER\s+[IVXLCDM]+\.)', input_content)
+
+    chapter_list = []
+    # 如果第一段不是以 CHAPTER 开头，存为第一部分
+    if not input_content.startswith("CHAPTER"):
+        chapter_list.append(("PREFACE", chapters[0]))
+        start_idx = 1
+    else:
+        start_idx = 1
+
+    for i in range(start_idx, len(chapters), 2):
+        title = chapters[i].strip()
+        content = chapters[i+1] if i+1 < len(chapters) else ""
+        chapter_list.append((title, content))
+
+    # --- 循环处理每一章 ---
+    for title, content in chapter_list:
+        # 生成规范的文件名，例如: output_CHAPTER_I.txt
+        safe_title = title.replace('.', '').replace(' ', '_')
+        filename = f"output_{safe_title}.txt"
+
+        # 【重点】检查 GitHub 仓库本地是否已有该文件
+        if os.path.exists(filename):
+            print(f"⏩ 章节已存在，跳过: {filename}")
+            continue
+
+        print(f"🚀 开始翻译新章节: {title}")
     
     processed_originals = [line.replace("原文: ", "").strip() for line in existing_output.split('\n') if line.startswith("原文: ")]
 
