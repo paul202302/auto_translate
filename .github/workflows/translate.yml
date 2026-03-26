@@ -30,6 +30,9 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add output_CHAPTER_*.txt
-          git commit -m "Update translated chapters" || echo "No changes to commit"
+          # 拉取最新代码防止冲突
+          git pull origin main 
+          # 只要是新生成的 CHAPTER 文件都添加
+          git add CHAPTER_*.txt PREFACE.txt || echo "No files to add"
+          git commit -m "Add translated chapters" || echo "No changes to commit"
           git push
