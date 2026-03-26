@@ -25,3 +25,11 @@ jobs:
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
         run: python translate_sync.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add output_CHAPTER_*.txt
+          git commit -m "Update translated chapters" || echo "No changes to commit"
+          git push
