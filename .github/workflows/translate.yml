@@ -13,12 +13,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 获取完整历史以减少推送冲突
+          fetch-depth: 0 # 必须设为 0 以获取完整历史，方便 rebase
 
       - name: Setup Git Identity
+        # 必须在跑 Python 前设置好，Python 里的 git 命令才能生效
         run: |
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -31,5 +32,4 @@ jobs:
       - name: Start Translation
         env:
           GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 有时需要明确传递 token
         run: python translate_sync.py
